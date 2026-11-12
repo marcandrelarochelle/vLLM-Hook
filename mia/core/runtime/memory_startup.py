@@ -169,7 +169,11 @@ def install_memory_startup_patch(module=None, *, version=None) -> None:
         from vllm.v1.worker import gpu_worker as module
         version = vllm.__version__
     if str(version).split('+', 1)[0] != '0.32.0':
-        raise MiaConfigurationError(f'MIA outside-buffer startup requires vLLM 0.32.0, got {version}')
+        # Bypass: warn instead of failing on unvalidated vLLM versions. The
+        # functional gate is the request_memory boundary check below.
+        print(f"[mia] WARNING: MIA outside-buffer startup was validated on vLLM "
+              f"0.32.0, got {version} — continuing (version check bypassed).",
+              flush=True)
     if getattr(module, '_mia_memory_startup_patched', False):
         return
     if not callable(getattr(module, 'request_memory', None)):

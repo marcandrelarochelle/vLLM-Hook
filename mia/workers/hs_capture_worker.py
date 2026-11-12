@@ -525,6 +525,20 @@ class HSCaptureWorker:
                 "delivery_dir": os.path.abspath(gp.out_dir) if gp is not None else None,
                 "run_id": gp.run_id if gp is not None else None}
 
+    def fetch_lens_weights(self) -> dict | None:
+        """One-time fetch of the response-lens weights (lm_head + final norm).
+
+        Called via ``collective_rpc("fetch_lens_weights")`` at engine load time
+        (once, not per request). The vLLM V1 engine keeps the model in the
+        EngineCore process, so the driver cannot read the weights in-process.
+        The weights are serialized with ``torch.save`` (``.pt`` format) into a
+        byte buffer and shipped as a base64 string (plain strings survive the
+        RPC serialization intact). Returns ``None`` if the model/weights are
+        not on this rank.
+        """
+        from mia.lens_weights import fetch_lens_weights as _fetch
+        return _fetch(self)
+
     def dump_profiler(self) -> str | None:
         """Dump this worker's profiler snapshot to MIA_PROFILE_DIR; return the path or None."""
         return PROF.dump(role="worker-rpc")
